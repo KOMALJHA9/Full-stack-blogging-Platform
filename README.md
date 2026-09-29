@@ -1,76 +1,192 @@
-# RQ Blog Redux with Java Backend
+# Blogpilot AI
 
-This is a separate copy of the RQ Blog Redux project. The React/TypeScript frontend is unchanged; its API is implemented by a Spring Boot Java backend instead of Express/Prisma. The original `rq-blog-redux` folder is not part of this download and was not modified.
+Blogpilot AI is a full-stack blogging platform that brings AI into the writing workflow. Create and edit Markdown posts, discover content with search and filters, and interact through likes and comments. Use the Ollama-powered assistant to generate drafts, summarize articles, and answer questions using published blog content.
 
-## Requirements
+## Project Overview
 
-- Java 17 or newer
-- Maven 3.6+ (or use an IDE with Maven support)
-- Node.js 18+ and npm
-- Docker Desktop for the included PostgreSQL service, or a local PostgreSQL 14+ server
-- Ollama and the `qwen2.5:3b` model for AI drafting, summaries, and chat
+The application combines a React and TypeScript frontend with a Java and Spring Boot REST API. Spring Data JPA and Hibernate persist posts, comments, and likes in PostgreSQL. AI features connect to an Ollama model, so drafting, summaries, and chat can run against a local Ollama service.
 
-## Run locally
+## Tech Stack
 
-1. Start PostgreSQL from this project folder:
+### Frontend
 
-   ```sh
-   docker compose up -d database
-   ```
+- React 18 and TypeScript
+- Redux Toolkit for shared filters and toast state
+- TanStack React Query for API data, caching, and mutations
+- React Router for page navigation
+- React Markdown and `remark-gfm` for Markdown rendering
+- Axios for API requests
 
-   The default connection is `jdbc:postgresql://localhost:5432/rq_blog`, user `postgres`, password `postgres`. Override with `DATABASE_URL`, `DATABASE_USERNAME`, and `DATABASE_PASSWORD` if needed.
+### Backend
 
-2. Start the API in another terminal:
+- Java 17 and Spring Boot 3
+- Spring MVC for REST endpoints
+- Spring Data JPA and Hibernate for persistence
+- Jakarta Bean Validation for request validation
+- Maven for dependency and build management
 
-   ```sh
-   cd backend
-   mvn spring-boot:run
-   ```
+### Database and AI
 
-   It listens on `http://localhost:5001`, which matches the unchanged frontend proxy.
+- PostgreSQL 16, available through Docker Compose
+- Ollama with the `qwen2.5:3b` model by default
+- Java `HttpClient` for requests to the Ollama chat API
 
-3. To enable AI actions, start Ollama and fetch the configured model:
+## Features
 
-   ```sh
-   ollama pull qwen2.5:3b
-   ```
+### Blog Management
 
-   Set `AI_BASE_URL` or `AI_MODEL` to use another Ollama endpoint/model.
+- Create, edit, view, delete, publish, and unpublish posts
+- Write and render posts with Markdown
+- Browse posts with title and content search, tag and author filters, sorting, and pagination
+- See reading-time estimates and post excerpts
 
-4. Start the frontend in another terminal:
+### Community and Saved Posts
 
-   ```sh
-   cd frontend
-   npm install
-   npm start
-   ```
+- Add and delete comments on posts
+- Like and unlike posts
+- Bookmark posts and filter the list to saved posts; bookmarks are stored in browser local storage
 
-   Open `http://localhost:3000`.
+### AI Writing Assistant
 
-The database schema is created/updated by Hibernate on startup. For production, replace `spring.jpa.hibernate.ddl-auto=update` with versioned database migrations and use a managed PostgreSQL instance.
+- Generate a title, body, and tag for a post from a prompt
+- Generate concise summaries of posts
+- Chat with an assistant that can use excerpts from recently published posts as context
 
-## API compatibility
+### Draft Recovery and Application State
 
-The Java API keeps the routes and JSON response shapes used by the frontend:
+- Automatically save post and comment drafts in the browser and restore them later
+- Cache and refresh server data with TanStack React Query
+- Preserve listing filters and display app-wide notifications with Redux Toolkit
 
-- `GET /api/posts` supports `tag`, `author`, `search`, `ids`, `sort`, `page`, and `pageSize`.
-- `GET /api/posts/{id}`, `POST /api/posts`, `PUT /api/posts/{id}`, `DELETE /api/posts/{id}`.
-- `PATCH /api/posts/{id}/publish` toggles publication; `PATCH /api/posts/{id}/like` sets a client-specific like.
-- `GET/POST /api/posts/{postId}/comments` and `DELETE /api/comments/{id}`.
-- `POST /api/ai/draft`, `/api/ai/summary`, and `/api/ai/chat` use Ollama.
+## Project Structure
 
-## Backend differences: Node/Express vs Java/Spring
+```text
+.
+├── backend/
+│   ├── src/main/java/com/rqblog/api/
+│   │   ├── config/
+│   │   ├── controller/
+│   │   ├── dto/
+│   │   ├── exception/
+│   │   ├── model/
+│   │   ├── repository/
+│   │   └── service/
+│   ├── src/main/resources/application.properties
+│   └── pom.xml
+├── frontend/
+│   ├── src/
+│   │   ├── api/
+│   │   ├── components/
+│   │   ├── hooks/
+│   │   ├── pages/
+│   │   ├── store/
+│   │   └── utils/
+│   └── package.json
+├── docker-compose.yml
+└── README.md
+```
 
-| Area | Existing backend | This project |
+## Getting Started
+
+### Prerequisites
+
+- Java 17 or later
+- Maven 3.6 or later
+- Node.js 18 or later and npm
+- Docker Desktop, or a local PostgreSQL 14+ instance
+- Ollama and the `qwen2.5:3b` model for AI features
+
+### 1. Clone the repository
+
+```sh
+git clone <repository-url>
+cd <repository-directory>
+```
+
+### 2. Start PostgreSQL
+
+From the project root, start the included database service:
+
+```sh
+docker compose up -d database
+```
+
+The default database is `rq_blog`, with username `postgres` and password `postgres`.
+
+### 3. Start the backend
+
+In a new terminal, from the project root:
+
+```sh
+cd backend
+mvn spring-boot:run
+```
+
+The API runs at `http://localhost:5001`.
+
+### 4. Start Ollama for AI features
+
+Make sure Ollama is installed and running, then download the default model:
+
+```sh
+ollama pull qwen2.5:3b
+```
+
+AI endpoints use the values in the configuration table below. The blog can be used without Ollama, but its AI features will be unavailable.
+
+### 5. Start the frontend
+
+In another terminal, from the project root:
+
+```sh
+cd frontend
+npm install
+npm start
+```
+
+Open `http://localhost:3000` in your browser.
+
+## Configuration
+
+The backend reads configuration from environment variables and falls back to these defaults:
+
+| Variable | Default | Purpose |
 | --- | --- | --- |
-| Runtime and language | Node.js, JavaScript, Express | Java 17+, Spring Boot |
-| HTTP routing | Express routers and middleware | Spring MVC controllers and advice |
-| Database access | Prisma Client and Prisma schema | Spring Data JPA/Hibernate entities and repositories |
-| Database | PostgreSQL via Prisma | PostgreSQL via JDBC; Hibernate creates/updates tables |
-| Request validation | Handwritten checks in controllers | Jakarta Bean Validation on request DTOs |
-| Errors | Express error middleware | Central `@RestControllerAdvice` JSON responses |
-| Configuration | `backend/.env` loaded by dotenv | Spring properties with environment-variable overrides |
-| AI integration | Node `fetch` to Ollama | Java `HttpClient` to the same Ollama chat API |
-| Frontend | React/TypeScript; proxy targets port 5001 | Identical React/TypeScript files; API listens on port 5001 |
+| `PORT` | `5001` | Backend HTTP port |
+| `DATABASE_URL` | `jdbc:postgresql://localhost:5432/rq_blog` | PostgreSQL JDBC URL |
+| `DATABASE_USERNAME` | `postgres` | Database username |
+| `DATABASE_PASSWORD` | `postgres` | Database password |
+| `FRONTEND_ORIGIN` | `http://localhost:3000` | Allowed frontend origin for CORS |
+| `AI_BASE_URL` | `http://localhost:11434` | Ollama base URL |
+| `AI_MODEL` | `qwen2.5:3b` | Ollama model name |
 
-The browser-facing behavior and API contract are intended to stay the same. Internally, database models, validation, startup, dependency management, and error handling use Java/Spring conventions. The frontend is copied as source; `node_modules` is intentionally excluded and installed with `npm install`.
+Hibernate creates or updates the schema when the backend starts. For production deployments, use a managed database and versioned schema migrations.
+
+## API Endpoints
+
+### Posts
+
+- `GET /api/posts` - List posts. Supports `tag`, `author`, `search`, `ids`, `sort`, `page`, and `pageSize` query parameters.
+- `GET /api/posts/{id}` - Get a post.
+- `POST /api/posts` - Create a post.
+- `PUT /api/posts/{id}` - Update a post.
+- `PATCH /api/posts/{id}/publish` - Toggle a post's published status.
+- `PATCH /api/posts/{id}/like` - Set the current client's like state.
+- `DELETE /api/posts/{id}` - Delete a post.
+
+### Comments
+
+- `GET /api/posts/{postId}/comments` - List a post's comments.
+- `POST /api/posts/{postId}/comments` - Add a comment.
+- `DELETE /api/comments/{id}` - Delete a comment.
+
+### AI
+
+- `POST /api/ai/draft` - Generate a blog post draft.
+- `POST /api/ai/summary` - Summarize post content.
+- `POST /api/ai/chat` - Chat with the blog assistant.
+
+## Notes
+
+- Bookmarks and recoverable drafts are stored in browser local storage.
+- The default AI integration expects a running local Ollama service; `AI_BASE_URL` and `AI_MODEL` can be changed for another compatible Ollama endpoint or model.
