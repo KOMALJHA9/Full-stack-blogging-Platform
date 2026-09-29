@@ -1,0 +1,9 @@
+package com.rqblog.api.repository;
+
+import com.rqblog.api.model.Comment;
+import java.util.List;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface CommentRepository extends JpaRepository<Comment, Long> {
+    List<Comment> findByPost_IdOrderByCreatedAtAsc(Long postId);
+}
